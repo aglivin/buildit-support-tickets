@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.venv_broken
+
+# Environment
+.env
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Alembic (keep only the versions dir, not generated migrations cache)
+# nothing to add — versions are committed intentionally
+
+# Claude Code
+.claude/
+CLAUDE.md

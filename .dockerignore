@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+.venv
+.venv_broken
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+htmlcov
+tests/
+.claude/
+CLAUDE.md
+README.md
