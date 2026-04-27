@@ -6,9 +6,9 @@ A FastAPI service that accepts support tickets, sends them to GPT-4o-mini for cl
 
 ## Run it locally
 
-1. Copy the env template and add your OpenAI key:
+1. Go to the project folder and set your OpenAI key in `.env`:
    ```bash
-   cp .env.example .env
+   cd buildit-support-tickets
    # open .env and set OPENAI_API_KEY=sk-proj-...
    ```
 2. Start the stack:
@@ -41,26 +41,30 @@ A FastAPI service that accepts support tickets, sends them to GPT-4o-mini for cl
 
 ### POST /tickets
 
-```bash
-curl -X POST http://localhost:8000/tickets \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "title": "Charged twice for October subscription",
-    "body": "I see two charges of €49 on my card from Oct 3. Please refund one.",
-    "customer_email": "anna@example.com"
-  }'
-```
-
 Returns `201 Created` with the enriched ticket. If the LLM took longer than `LLM_TIMEOUT_SECONDS`, returns `202 Accepted` — the ticket is saved with `enrichment_status: pending` and enrichment finishes in the background.
 
 ```bash
 curl -X POST http://localhost:8000/tickets \
   -H 'Content-Type: application/json' \
-  -d '{
-    "title": "PDF export crashes on invoices over 50 pages",
-    "body": "Exporting an invoice with 60 line items throws a 500. Happens every time. Stack trace in attachment.",
-    "customer_email": "ops@enterprise.com"
-  }'
+  -d '{"title":"Charged twice for October subscription","body":"Hi, I see two charges of EUR49 on my card from Oct 3. Please refund one. This is the second time this happens and I am getting frustrated.","customer_email":"anna@example.com"}'
+```
+
+```bash
+curl -X POST http://localhost:8000/tickets \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"App crashes on PDF export","body":"Every time I try to export my project to PDF the app freezes completely and I lose unsaved work. I am on v2.3.1, macOS 14.2. Happens 100% of the time with files over ~20 pages.","customer_email":"dev@startup.io"}'
+```
+
+```bash
+curl -X POST http://localhost:8000/tickets \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Love the new dashboard","body":"Just wanted to say the redesign is great. Much cleaner. Would be amazing to have dark mode though - my eyes will thank you.","customer_email":"happy@customer.com"}'
+```
+
+```bash
+curl -X POST http://localhost:8000/tickets \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Can'\''t log in","body":"Password reset email never arrives. Checked spam. Tried three times over the last hour. My account email is below.","customer_email":"locked.out@example.org"}'
 ```
 
 ### GET /tickets
