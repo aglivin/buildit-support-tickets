@@ -1,6 +1,6 @@
 import hashlib
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,7 +16,7 @@ def compute_fingerprint(email: str, body: str) -> str:
 
 
 async def find_recent_duplicate(session: AsyncSession, fingerprint: str) -> Ticket | None:
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=settings.dedup_window_minutes)
+    cutoff = datetime.now(UTC) - timedelta(minutes=settings.dedup_window_minutes)
     result = await session.execute(
         select(Ticket).where(
             Ticket.fingerprint == fingerprint,

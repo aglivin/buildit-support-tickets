@@ -1,12 +1,15 @@
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import FastAPI
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.api.tickets import router as tickets_router, _background_enrich
+from app.api.tickets import _background_enrich
+from app.api.tickets import router as tickets_router
 from app.db import async_session_maker
 from app.models import EnrichmentStatus, Ticket
 
@@ -18,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # Re-enrich tickets that were left pending by a previous process crash.
     # A ticket older than 1 minute that is still pending was likely orphaned.
     await _sweep_pending_tickets()
@@ -26,7 +29,7 @@ async def lifespan(app: FastAPI):
 
 
 async def _sweep_pending_tickets() -> None:
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=1)
+    cutoff = datetime.now(UTC) - timedelta(minutes=1)
     try:
         async with async_session_maker() as session:
             result = await session.execute(
@@ -40,7 +43,7 @@ async def _sweep_pending_tickets() -> None:
         if ids:
             logger.info("Startup sweep: re-enriching %d pending ticket(s)", len(ids))
             await asyncio.gather(*(_background_enrich(tid) for tid in ids), return_exceptions=True)
-    except Exception:
+    except SQLAlchemyError:
         logger.exception("Startup sweep failed — continuing without it")
 
 
@@ -55,5 +58,5 @@ app.include_router(tickets_router)
 
 
 @app.get("/healthz", tags=["meta"])
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok"}

@@ -27,9 +27,14 @@ Thumbs.db
 .coverage
 htmlcov/
 
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+
 # Alembic (keep only the versions dir, not generated migrations cache)
 # nothing to add — versions are committed intentionally
 
-# Claude Code
+# Claude Code / AI planning artifacts
 .claude/
 CLAUDE.md
+docs/

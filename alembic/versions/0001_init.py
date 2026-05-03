@@ -5,33 +5,46 @@ Revises:
 Create Date: 2026-04-26 00:00:00.000000
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
 
+from alembic import op
+
 revision: str = "0001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     ticket_category = postgresql.ENUM(
-        "billing", "bug", "feature_request", "account", "other",
+        "billing",
+        "bug",
+        "feature_request",
+        "account",
+        "other",
         name="ticket_category",
     )
     ticket_priority = postgresql.ENUM(
-        "low", "medium", "high", "urgent",
+        "low",
+        "medium",
+        "high",
+        "urgent",
         name="ticket_priority",
     )
     ticket_sentiment = postgresql.ENUM(
-        "negative", "neutral", "positive",
+        "negative",
+        "neutral",
+        "positive",
         name="ticket_sentiment",
     )
     enrichment_status = postgresql.ENUM(
-        "pending", "completed", "failed",
+        "pending",
+        "completed",
+        "failed",
         name="enrichment_status",
     )
 
@@ -47,20 +60,56 @@ def upgrade() -> None:
         sa.Column("body", sa.Text, nullable=False),
         sa.Column("customer_email", sa.String(320), nullable=False),
         sa.Column("fingerprint", sa.String(64), nullable=False),
-        sa.Column("category", postgresql.ENUM("billing", "bug", "feature_request", "account", "other", name="ticket_category", create_type=False), nullable=True),
-        sa.Column("priority", postgresql.ENUM("low", "medium", "high", "urgent", name="ticket_priority", create_type=False), nullable=True),
-        sa.Column("sentiment", postgresql.ENUM("negative", "neutral", "positive", name="ticket_sentiment", create_type=False), nullable=True),
+        sa.Column(
+            "category",
+            postgresql.ENUM(
+                "billing",
+                "bug",
+                "feature_request",
+                "account",
+                "other",
+                name="ticket_category",
+                create_type=False,
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "priority",
+            postgresql.ENUM(
+                "low", "medium", "high", "urgent", name="ticket_priority", create_type=False
+            ),
+            nullable=True,
+        ),
+        sa.Column(
+            "sentiment",
+            postgresql.ENUM(
+                "negative", "neutral", "positive", name="ticket_sentiment", create_type=False
+            ),
+            nullable=True,
+        ),
         sa.Column("summary", sa.Text, nullable=True),
         sa.Column(
             "enrichment_status",
-            postgresql.ENUM("pending", "completed", "failed", name="enrichment_status", create_type=False),
+            postgresql.ENUM(
+                "pending", "completed", "failed", name="enrichment_status", create_type=False
+            ),
             nullable=False,
             server_default="pending",
         ),
         sa.Column("enrichment_error", sa.Text, nullable=True),
         sa.Column("enriched_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
     )
 
     op.create_unique_constraint("uq_tickets_fingerprint", "tickets", ["fingerprint"])

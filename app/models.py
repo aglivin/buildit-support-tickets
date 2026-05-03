@@ -2,7 +2,8 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum as SAEnum, Index, String, Text, func
+from sqlalchemy import DateTime, Index, String, Text, func
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -11,7 +12,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class TicketCategory(str, enum.Enum):
+class TicketCategory(enum.StrEnum):
     billing = "billing"
     bug = "bug"
     feature_request = "feature_request"
@@ -19,20 +20,20 @@ class TicketCategory(str, enum.Enum):
     other = "other"
 
 
-class TicketPriority(str, enum.Enum):
+class TicketPriority(enum.StrEnum):
     low = "low"
     medium = "medium"
     high = "high"
     urgent = "urgent"
 
 
-class TicketSentiment(str, enum.Enum):
+class TicketSentiment(enum.StrEnum):
     negative = "negative"
     neutral = "neutral"
     positive = "positive"
 
 
-class EnrichmentStatus(str, enum.Enum):
+class EnrichmentStatus(enum.StrEnum):
     pending = "pending"
     completed = "completed"
     failed = "failed"
@@ -41,9 +42,7 @@ class EnrichmentStatus(str, enum.Enum):
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     customer_email: Mapped[str] = mapped_column(String(320), nullable=False)

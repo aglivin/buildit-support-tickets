@@ -3,12 +3,13 @@ import json
 import logging
 
 from openai import APIError, APIStatusError
+from pydantic import ValidationError
 
+from app.config import settings
 from app.llm.client import get_client
 from app.llm.prompts import SYSTEM_PROMPT, TRIAGE_TOOL
 from app.schemas import EnrichmentResult
 from app.services.pii import mask_for_llm
-from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,8 @@ async def _call_llm(title: str, body: str) -> tuple[EnrichmentResult | None, str
 
     client = get_client()
     try:
-        response = await client.chat.completions.create(
+        # TRIAGE_TOOL is correct at runtime; openai overloads reject generic dict[str, object]
+        response = await client.chat.completions.create(  # type: ignore[call-overload]
             model=settings.llm_model,
             max_tokens=300,
             temperature=0,
@@ -38,14 +40,12 @@ async def _call_llm(title: str, body: str) -> tuple[EnrichmentResult | None, str
     except APIError as exc:
         logger.error("OpenAI API error type=%s", type(exc).__name__)
         return None, "unexpected_error"
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught  # openai raises arbitrary subclasses
         logger.error("Unexpected LLM error type=%s", type(exc).__name__)
         return None, "unexpected_error"
 
     tool_calls = response.choices[0].message.tool_calls if response.choices else None
-    tool_call = next(
-        (tc for tc in (tool_calls or []) if tc.function.name == "record_triage"), None
-    )
+    tool_call = next((tc for tc in (tool_calls or []) if tc.function.name == "record_triage"), None)
     if not tool_call:
         logger.warning("No tool_call in LLM response")
         return None, "no_tool_use"
@@ -53,16 +53,14 @@ async def _call_llm(title: str, body: str) -> tuple[EnrichmentResult | None, str
     try:
         result = EnrichmentResult.model_validate(json.loads(tool_call.function.arguments))
         return result, None
-    except Exception:
+    except (json.JSONDecodeError, ValidationError):
         logger.warning("Invalid tool_call arguments: %s", tool_call.function.arguments)
         return None, "invalid_tool_input"
 
 
 async def enrich_ticket(title: str, body: str) -> tuple[EnrichmentResult | None, str | None]:
     try:
-        return await asyncio.wait_for(
-            _call_llm(title, body), timeout=settings.llm_timeout_seconds
-        )
-    except asyncio.TimeoutError:
+        return await asyncio.wait_for(_call_llm(title, body), timeout=settings.llm_timeout_seconds)
+    except TimeoutError:
         logger.warning("LLM enrichment timed out after %.1fs", settings.llm_timeout_seconds)
         return None, "timeout"

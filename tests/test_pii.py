@@ -1,8 +1,6 @@
 """PII masking: unit tests for app/services/pii.py."""
-import pytest
 
 from app.services.pii import mask_for_llm
-
 
 # ── Email masking ─────────────────────────────────────────────────────────────
 

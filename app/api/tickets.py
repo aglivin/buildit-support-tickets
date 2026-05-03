@@ -1,6 +1,5 @@
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
@@ -33,7 +32,7 @@ async def _background_enrich(ticket_id: UUID) -> None:
             ticket.sentiment = enrichment.sentiment
             ticket.summary = enrichment.summary
             ticket.enrichment_status = EnrichmentStatus.completed
-            ticket.enriched_at = datetime.now(timezone.utc)
+            ticket.enriched_at = datetime.now(UTC)
             ticket.enrichment_error = None
         else:
             ticket.enrichment_status = EnrichmentStatus.failed
@@ -91,7 +90,7 @@ async def create_ticket(
         ticket.sentiment = enrichment.sentiment
         ticket.summary = enrichment.summary
         ticket.enrichment_status = EnrichmentStatus.completed
-        ticket.enriched_at = datetime.now(timezone.utc)
+        ticket.enriched_at = datetime.now(UTC)
         ticket.enrichment_error = None
         await session.commit()
         await session.refresh(ticket)
@@ -116,9 +115,9 @@ async def create_ticket(
 
 @router.get("", response_model=TicketListResponse)
 async def list_tickets(
-    category: Optional[TicketCategory] = Query(None),
-    priority: Optional[TicketPriority] = Query(None),
-    since: Optional[datetime] = Query(None, description="ISO-8601 datetime, e.g. 2024-01-01"),
+    category: TicketCategory | None = Query(None),
+    priority: TicketPriority | None = Query(None),
+    since: datetime | None = Query(None, description="ISO-8601 datetime, e.g. 2024-01-01"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_session),
@@ -138,18 +137,21 @@ async def list_tickets(
 
     total = (await session.execute(count_q)).scalar_one()
     rows = (
-        await session.execute(
-            q.order_by(Ticket.created_at.desc()).offset(offset).limit(limit)
-        )
-    ).scalars().all()
+        (await session.execute(q.order_by(Ticket.created_at.desc()).offset(offset).limit(limit)))
+        .scalars()
+        .all()
+    )
 
-    return TicketListResponse(items=list(rows), total=total, limit=limit, offset=offset)
+    return TicketListResponse(
+        items=[TicketRead.model_validate(row) for row in rows],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/{ticket_id}", response_model=TicketRead)
-async def get_ticket(
-    ticket_id: UUID, session: AsyncSession = Depends(get_session)
-) -> Ticket:
+async def get_ticket(ticket_id: UUID, session: AsyncSession = Depends(get_session)) -> Ticket:
     result = await session.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:

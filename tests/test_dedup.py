@@ -1,11 +1,11 @@
 """Deduplication: fingerprint computation and duplicate-request handling."""
+
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.services.dedup import compute_fingerprint
 from tests.conftest import TICKET_PAYLOAD, build_ticket
-
 
 # ── Pure unit tests ────────────────────────────────────────────────────────────
 

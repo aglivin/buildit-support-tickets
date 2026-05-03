@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,7 +26,7 @@ ENRICHMENT_RESULT = EnrichmentResult(
 
 def build_ticket(**overrides) -> Ticket:
     """Return an in-memory Ticket with all required fields set."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     t = Ticket(
         title=TICKET_PAYLOAD["title"],
         body=TICKET_PAYLOAD["body"],
@@ -66,10 +66,12 @@ def mock_session():
     session.rollback = AsyncMock()
 
     async def _refresh(obj):
+        if getattr(obj, "id", None) is None:
+            obj.id = uuid.uuid4()
         if getattr(obj, "created_at", None) is None:
-            obj.created_at = datetime.now(timezone.utc)
+            obj.created_at = datetime.now(UTC)
         if getattr(obj, "updated_at", None) is None:
-            obj.updated_at = datetime.now(timezone.utc)
+            obj.updated_at = datetime.now(UTC)
 
     session.refresh = AsyncMock(side_effect=_refresh)
     return session

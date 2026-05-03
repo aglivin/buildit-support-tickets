@@ -1,4 +1,5 @@
 """Happy-path and failure-mode tests for POST /tickets."""
+
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -41,11 +42,14 @@ async def test_create_ticket_llm_failure_returns_201_with_failed_status(client):
 
 @pytest.mark.asyncio
 async def test_create_ticket_timeout_returns_202(client):
-    with patch(
-        "app.api.tickets.enrich_ticket",
-        new_callable=AsyncMock,
-        return_value=(None, "timeout"),
-    ), patch("app.api.tickets._background_enrich", new_callable=AsyncMock):
+    with (
+        patch(
+            "app.api.tickets.enrich_ticket",
+            new_callable=AsyncMock,
+            return_value=(None, "timeout"),
+        ),
+        patch("app.api.tickets._background_enrich", new_callable=AsyncMock),
+    ):
         r = await client.post("/tickets", json=TICKET_PAYLOAD)
 
     assert r.status_code == 202

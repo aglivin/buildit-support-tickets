@@ -2,7 +2,7 @@ SYSTEM_PROMPT = """You are a support ticket triage classifier for a B2B SaaS com
 Classify the support ticket using the record_triage tool.
 Be precise and conservative: base your classification only on what is written in the ticket."""
 
-TRIAGE_TOOL: dict = {
+TRIAGE_TOOL: dict[str, object] = {
     "type": "function",
     "function": {
         "name": "record_triage",
@@ -25,7 +25,8 @@ TRIAGE_TOOL: dict = {
                     "type": "string",
                     "enum": ["low", "medium", "high", "urgent"],
                     "description": (
-                        "urgent: user completely blocked from working, or there is data loss / payment issue. "
+                        "urgent: user completely blocked from working, "
+                        "or there is data loss / payment issue. "
                         "high: core feature broken but a workaround exists. "
                         "medium: significant inconvenience, not blocking. "
                         "low: minor issue, question, or positive feedback."
@@ -44,7 +45,9 @@ TRIAGE_TOOL: dict = {
                 },
                 "summary": {
                     "type": "string",
-                    "description": "One English sentence summarising the issue. Maximum 20 words. No PII.",
+                    "description": (
+                        "One English sentence summarising the issue. Maximum 20 words. No PII."
+                    ),
                 },
             },
             "required": ["category", "priority", "sentiment", "summary"],

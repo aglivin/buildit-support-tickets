@@ -6,7 +6,7 @@ _client: AsyncOpenAI | None = None
 
 
 def get_client() -> AsyncOpenAI:
-    global _client
+    global _client  # pylint: disable=global-statement  # module-level singleton; only mutated here
     if _client is None:
         if not settings.openai_api_key:
             raise RuntimeError("OPENAI_API_KEY is not set")
